@@ -1,0 +1,1307 @@
+<template>
+    <div class="container">
+        <el-row>
+            <el-alert
+              :title="title"
+              :closable="false"
+              type="info">
+            </el-alert>           
+        </el-row>   
+        <el-row class="m20" >
+            <el-col :span="2">
+                    <el-button  icon="el-icon-plus" type="primary" @click="dialogVisible1=true">新增</el-button>
+            </el-col>            
+            <el-col :span="22"   class="col-flex-end">
+                    <el-button  type="primary" @click="reset">重置</el-button>
+                    <div class="l20">
+                        <el-input
+                        style="padding:0px 10px 0px 0px"
+                          placeholder="事务名称"
+                          v-model="search.input"
+                          clearable>
+                        </el-input> 
+                    </div>
+                    <!-- <div class="l20">
+                        <el-input
+                        style="padding:0px 10px 0px 0px"
+                          placeholder="请输入关键字"
+                          v-model="search.input"
+                          clearable>
+                        </el-input> 
+                    </div> -->
+                    <el-select class="l20" v-model="search.order" placeholder="事务类型">
+                      <el-option
+                        v-for="item in hdxz"
+                        :key="item.value"
+                        :label="item.label"
+                        :value="item.value">
+                      </el-option>
+                    </el-select>   
+                    <el-date-picker
+                      v-model="search.time1"
+                       value-format="yyyy-MM-dd"
+                      style="width:160px"
+                    class="l20"
+                      type="date"
+                      placeholder="创建时间">
+                    </el-date-picker> 
+                    <!-- <el-date-picker
+                      v-model="search.time2"
+                       value-format="yyyy-MM-dd"
+                      style="width:160px"
+                    class="l20"
+                      type="date"
+                      placeholder="待办时间">
+                    </el-date-picker>                                                                                              -->
+                    <el-button @click="handleSearch" class="l20" style="margin-left:20px" icon="el-icon-search"  type="success" circle></el-button>                                                                  
+            </el-col>             
+        </el-row>
+        <el-table
+            :data="tableData"  
+            border  
+            ref="multipleTable" 
+            tooltip-effect="dark"
+             highlight-current-row style="width: 100%;font-weight:bold"
+            class="m20"
+              v-loading="loading"
+            @selection-change="handleSelectionChange"
+            id="text"
+          >
+            <el-table-column
+              type="index"
+              align="center"
+              width="55">
+            </el-table-column>        
+        
+            <el-table-column prop="creatName" label="创建人" align="center"   ></el-table-column>
+            <el-table-column prop="commissionName" label="待办人" align="center"   ></el-table-column>
+            <el-table-column prop="name" label="事务名称" align="center"  min-width="100" >
+                             <template slot-scope="scope">
+                          <el-tooltip class="item" effect="dark" :content="scope.row.name" placement="top">
+                              <span>{{scope.row.name}}</span>
+                          </el-tooltip>
+                    </template> 
+            </el-table-column>
+            <el-table-column prop="commissionAddres" label="待办备注" align="center"  min-width="200" >
+                          <template slot-scope="scope">
+                          <el-tooltip class="item" effect="dark" :content="scope.row.commissionAddres" placement="top">
+                              <span>{{scope.row.commissionAddres}}</span>
+                          </el-tooltip>
+                    </template> 
+            </el-table-column>
+            <el-table-column prop="mobile" label="提醒人号码" align="center" width="120"  ></el-table-column>
+            <el-table-column prop="commissionTime" label="待办时间" align="center"  width="140"  ></el-table-column>
+            <el-table-column prop="createTime" label="创建时间" align="center"   width="140" ></el-table-column> 
+            <el-table-column prop="sendTime" label="事务提醒时间" align="center"  width="140"  ></el-table-column> 
+            <el-table-column prop="status" label="状态" align="center" width="130" 
+             :filters="[{ text: '新建', value: '1' }, { text: '未完成', value: '2' }, { text: '已完成', value: '3' }, { text: '过期未完成', value: '4' }]" :filter-method="filterStatus" filter-placement="bottom-end"
+                    >
+                    <template slot-scope="scope">
+                        <el-tag style="margin-left: 10px" :type="scope.row.status ==1?'':scope.row.status ==2?'info':scope.row.status ==3?'success':'danger'">
+                          {{ scope.row.status ==1?'新建':scope.row.status ==2?'未完成':scope.row.status ==3?'已完成':'过期未完成' }}
+                        </el-tag>
+                    </template> 
+              
+            </el-table-column>  
+            <el-table-column prop="stop" label="是否结束" align="center" width="100" 
+             :filters="[{ text: '是', value: 'true' }, { text: '否', value: 'false' }]" :filter-method="filterStop" filter-placement="bottom-end"
+            
+                    >
+                    <template slot-scope="scope">
+                        <el-tag style="margin-left: 10px" :type="scope.row.stop=='true' ?'succes':'danger'">
+                          {{ scope.row.stop=='true'  ?'是':'否' }}
+                        </el-tag>
+                    </template> 
+              
+            </el-table-column>     
+            <el-table-column prop="type" label="类型" align="center" width="100" 
+                    >
+                    <template slot-scope="scope">
+                        <el-tag style="margin-left: 10px" :type="scope.row.type ==1?'':scope.row.type ==2?'success':'danger'">
+                          {{ scope.row.type ==1?'周':scope.row.type ==2?'月':'非周期' }}
+                        </el-tag>
+                    </template> 
+              
+            </el-table-column>                                  
+            <el-table-column prop="cz"  align="center" label="操作" width="250"  >
+                <template slot-scope="scope">
+                <el-button
+                    size="mini"
+                    type="primary"
+                    @click="handleEdit(scope.$index, scope.row)"
+                   >编辑</el-button>
+                <el-button
+                    size="mini"
+                    type="success"
+                    @click="handleShow(scope.$index, scope.row)"
+                   >事务日志</el-button>
+                <el-button
+                    size="mini"
+                    type="danger"
+                    :disabled=" scope.row.stop=='true'  ?true:false "
+                    @click="handleTrue(scope.$index, scope.row)"
+                   >完成</el-button>                                      
+                </template> 
+            </el-table-column>            
+        </el-table>          
+        <el-row class="m20" v-if="total>0">
+            <!-- <el-button type="primary" style="float:left" @click="handelConfigAll" :disabled="multipleSelection.length==0">批量分配</el-button> -->
+             <div style="float:right">
+                 <el-pagination
+                   @current-change="handleCurrentChange"
+                    @size-change="handleSizeChange"
+                   :current-page="npage"
+                    :page-sizes="[10, 20, 30, 40]"
+                     :page-size="pageSize"
+                   background
+                   layout="total,sizes,prev, pager, next,jumper"
+                   :total="total">
+                 </el-pagination>   
+             </div>
+        </el-row>        
+        <el-dialog
+          title="新增事务"
+          :visible.sync="dialogVisible1"
+          center
+          width="30%"
+          >
+            <el-form  :rules="rules" :model="ruleForm2" status-icon  ref="ruleForm2" label-width="100px" >
+              <el-form-item label="事务名称" prop="name">
+                <el-input v-model="ruleForm2.name" auto-complete="off"></el-input>
+              </el-form-item>
+              <el-form-item label="待办人" prop="username">
+                <el-select v-model="ruleForm2.username" placeholder="请选择活动区域">
+                    <el-option
+                       v-for="item in jbr"
+                       :key="item.id"
+                       :label="item.staffName"
+                       :value="item.id">
+                    </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="手机号码" prop='mobile'>
+                <el-input v-model="ruleForm2.mobile"></el-input>
+              </el-form-item>  
+     
+              <el-form-item label="提醒时间">
+                <el-col :span="11">
+                    <el-time-picker
+                      v-model="ruleForm2.date2"
+                      style="width: 100%;"
+                      placeholder="提醒时间">
+                    </el-time-picker>                    
+                </el-col>
+              </el-form-item>              
+              <!-- <el-form-item label="提醒人电话">
+                <el-input v-model="ruleForm2.phone"></el-input>
+              </el-form-item> -->
+               <el-form-item label="活动性质">
+                 <el-switch
+                  v-model="ruleForm2.huodong"
+                  active-text="周期"
+                  inactive-text="非周期">
+                </el-switch>
+              </el-form-item> 
+              <template v-if="!ruleForm2.huodong">
+                              <el-form-item label="待办时间">
+                <el-col :span="11">
+                  <el-date-picker type="date" 
+                  value-format="yyyy-MM-dd"
+                  placeholder="选择日期" 
+                  v-model="ruleForm2.data" 
+                  style="width: 100%;"></el-date-picker>
+                </el-col>
+              </el-form-item>
+              </template>
+              <template v-if="ruleForm2.huodong">
+              <el-form-item label="周期类型">
+                <el-switch
+                  v-model="ruleForm2.now"
+                  active-text="月"
+                  inactive-text="周">
+                </el-switch>                
+              </el-form-item>  
+              <el-form-item  prop='sendDate' >
+                  <el-radio-group v-model="ruleForm2.sendDate" v-if="!ruleForm2.now">
+                    <el-radio-button label="周一">周一</el-radio-button>
+                    <el-radio-button label="周二">周二</el-radio-button>
+                    <el-radio-button label="周三">周三</el-radio-button>
+                    <el-radio-button label="周四">周四</el-radio-button>
+                    <el-radio-button label="周五">周五</el-radio-button>
+                    <el-radio-button label="周六">周六</el-radio-button>
+                    <el-radio-button label="周日">周日</el-radio-button>
+                  </el-radio-group>
+                  <el-radio-group v-model="ruleForm2.sendDate" id='rq' v-if="ruleForm2.now">
+                    <el-row class="m20">
+                      <el-radio-button label="1"> 1</el-radio-button>
+                      <el-radio-button label="2"> 2</el-radio-button>
+                      <el-radio-button label="3"> 3</el-radio-button>
+                      <el-radio-button label="4"> 4</el-radio-button>
+                      <el-radio-button label="5"> 5</el-radio-button>
+                      <el-radio-button label="6"> 6</el-radio-button>
+                      <el-radio-button label="7"> 7</el-radio-button>
+                      
+                    </el-row>
+                    <el-row class="m20">
+                      <el-radio-button label="8"> 8</el-radio-button>
+                      <el-radio-button label="9"> 9</el-radio-button>
+                      <el-radio-button label="10">10</el-radio-button>
+                      <el-radio-button label="11">11</el-radio-button>
+                      <el-radio-button label="12">12</el-radio-button>
+                      <el-radio-button label="13">13</el-radio-button>
+                      <el-radio-button label="14">14</el-radio-button>
+                
+                    </el-row>
+                    <el-row class="m20">
+                            <el-radio-button label="15">15</el-radio-button>
+                      <el-radio-button label="16">16</el-radio-button>
+                      <el-radio-button label="17">17</el-radio-button>
+                      <el-radio-button label="18">18</el-radio-button>
+                      <el-radio-button label="19">19</el-radio-button>
+                      <el-radio-button label="20">20</el-radio-button>
+                      <el-radio-button label="21">21</el-radio-button>
+                  
+                    </el-row>
+                    <el-row class="m20">
+                          <el-radio-button label="22">22</el-radio-button>
+                      <el-radio-button label="23">23</el-radio-button>
+                      <el-radio-button label="24">24</el-radio-button>
+                      <el-radio-button label="25">25</el-radio-button>
+                      <el-radio-button label="26">26</el-radio-button>
+                      <el-radio-button label="27">27</el-radio-button>
+                      <el-radio-button label="28">28</el-radio-button>
+                  
+                    </el-row>                                                            
+                    <el-row class="m20">
+                     <el-radio-button label="29">29</el-radio-button>
+                      <el-radio-button label="30">30</el-radio-button>
+                      <el-radio-button label="31">31</el-radio-button>
+                    </el-row>
+                  </el-radio-group>                  
+              </el-form-item>    
+              <el-form-item label="启始区间" prop="time">
+                 <el-date-picker
+                   v-model="ruleForm2.time"
+                   value-format="yyyy-MM-dd HH:mm:ss"
+                   type="daterange"
+                   range-separator="至"
+                   start-placeholder="开始日期"
+                   end-placeholder="结束日期">
+                 </el-date-picker>                
+              </el-form-item>               
+              </template>         
+             <!-- <el-form-item>
+                
+              </el-form-item>                -->
+              <!-- <el-form-item label="活动性质">
+                <el-select v-model="ruleForm2.type" placeholder="类型">
+                    <el-option
+                       v-for="item in hdxz"
+                       :key="item.value"
+                       :label="item.label"
+                       :value="item.value">
+                    </el-option>
+                </el-select>
+              </el-form-item> -->
+              <el-form-item label="备注">
+                <el-input type="textarea" v-model="ruleForm2.desc"></el-input>
+              </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="onSubmit1">提交</el-button>
+                  <el-button @click="resetForm('ruleForm2')">重置</el-button>
+                </el-form-item>
+            </el-form>       
+        </el-dialog>
+        <el-dialog
+          title="编辑事务"
+          :visible.sync="dialogVisible2"
+          center
+          width="30%"
+          >
+            <el-form  :rules="rules" :model="ruleForm3" status-icon  ref="ruleForm3" label-width="100px" >
+              <el-form-item label="事务名称" prop="name">
+                <el-input v-model="ruleForm3.name" auto-complete="off"></el-input>
+              </el-form-item>
+              <el-form-item label="待办人" prop="username">
+                <el-select v-model="ruleForm3.username" placeholder="请选择活动区域">
+                    <el-option
+                       v-for="item in jbr"
+                       :key="item.id"
+                       :label="item.staffName"
+                       :value="item.id">
+                    </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="手机号码" prop='mobile'>
+                <el-input v-model="ruleForm3.mobile"></el-input>
+              </el-form-item>  
+              <el-form-item label="提醒时间">
+                <el-col :span="11">
+                    <el-time-picker
+                      v-model="ruleForm3.date2"
+                      style="width: 100%;"
+                      placeholder="提醒时间">
+                    </el-time-picker>                    
+                </el-col>
+              </el-form-item>   
+               <el-form-item label="是否结束">
+                 <el-switch
+                  v-model="ruleForm3.stop"
+                  active-text="是"
+                  inactive-text="否">
+                </el-switch>
+              </el-form-item>                          
+              <!-- <el-form-item label="提醒人电话">
+                <el-input v-model="ruleForm2.phone"></el-input>
+              </el-form-item> -->
+               <el-form-item label="活动性质">
+                 <el-switch
+                  v-model="ruleForm3.huodong"
+                  active-text="周期"
+                  inactive-text="非周期">
+                </el-switch>
+              </el-form-item> 
+              <template v-if="!ruleForm3.huodong">
+                              <el-form-item label="待办时间">
+                <el-col :span="11">
+                  <el-date-picker type="date" 
+                  value-format="yyyy-MM-dd"
+                  placeholder="选择日期" 
+                  v-model="ruleForm3.data" 
+                  style="width: 100%;"></el-date-picker>
+                </el-col>
+              </el-form-item>
+              </template>
+              <template v-if="ruleForm3.huodong">
+              <el-form-item label="周期类型">
+                <el-switch
+                  v-model="ruleForm3.now"
+                  active-text="月"
+                  inactive-text="周">
+                </el-switch>                
+              </el-form-item>  
+              <el-form-item  prop='sendDate' >
+                  <el-radio-group v-model="ruleForm3.sendDate" v-if="!ruleForm3.now">
+                    <el-radio-button label="周一">周一</el-radio-button>
+                    <el-radio-button label="周二">周二</el-radio-button>
+                    <el-radio-button label="周三">周三</el-radio-button>
+                    <el-radio-button label="周四">周四</el-radio-button>
+                    <el-radio-button label="周五">周五</el-radio-button>
+                    <el-radio-button label="周六">周六</el-radio-button>
+                    <el-radio-button label="周日">周日</el-radio-button>
+                  </el-radio-group>
+                  <el-radio-group v-model="ruleForm3.sendDate" id='rq' v-if="ruleForm3.now">
+                    <el-row class="m20">
+                      <el-radio-button label="1"> 1</el-radio-button>
+                      <el-radio-button label="2"> 2</el-radio-button>
+                      <el-radio-button label="3"> 3</el-radio-button>
+                      <el-radio-button label="4"> 4</el-radio-button>
+                      <el-radio-button label="5"> 5</el-radio-button>
+                      <el-radio-button label="6"> 6</el-radio-button>
+                      <el-radio-button label="7"> 7</el-radio-button>
+                      
+                    </el-row>
+                    <el-row class="m20">
+                      <el-radio-button label="8"> 8</el-radio-button>
+                      <el-radio-button label="9"> 9</el-radio-button>
+                      <el-radio-button label="10">10</el-radio-button>
+                      <el-radio-button label="11">11</el-radio-button>
+                      <el-radio-button label="12">12</el-radio-button>
+                      <el-radio-button label="13">13</el-radio-button>
+                      <el-radio-button label="14">14</el-radio-button>
+                
+                    </el-row>
+                    <el-row class="m20">
+                            <el-radio-button label="15">15</el-radio-button>
+                      <el-radio-button label="16">16</el-radio-button>
+                      <el-radio-button label="17">17</el-radio-button>
+                      <el-radio-button label="18">18</el-radio-button>
+                      <el-radio-button label="19">19</el-radio-button>
+                      <el-radio-button label="20">20</el-radio-button>
+                      <el-radio-button label="21">21</el-radio-button>
+                  
+                    </el-row>
+                    <el-row class="m20">
+                          <el-radio-button label="22">22</el-radio-button>
+                      <el-radio-button label="23">23</el-radio-button>
+                      <el-radio-button label="24">24</el-radio-button>
+                      <el-radio-button label="25">25</el-radio-button>
+                      <el-radio-button label="26">26</el-radio-button>
+                      <el-radio-button label="27">27</el-radio-button>
+                      <el-radio-button label="28">28</el-radio-button>
+                  
+                    </el-row>                                                            
+                    <el-row class="m20">
+                     <el-radio-button label="29">29</el-radio-button>
+                      <el-radio-button label="30">30</el-radio-button>
+                      <el-radio-button label="31">31</el-radio-button>
+                    </el-row>
+                  </el-radio-group>                  
+              </el-form-item>   
+              <el-form-item label="启始区间" prop="time">
+                 <el-date-picker
+                   v-model="ruleForm3.time"
+                   value-format="yyyy-MM-dd HH:mm:ss"
+                   type="daterange"
+                   range-separator="至"
+                   start-placeholder="开始日期"
+                   end-placeholder="结束日期">
+                 </el-date-picker>                
+              </el-form-item>                  
+              </template>         
+             <!-- <el-form-item>
+                
+              </el-form-item>                -->
+              <!-- <el-form-item label="活动性质">
+                <el-select v-model="ruleForm2.type" placeholder="类型">
+                    <el-option
+                       v-for="item in hdxz"
+                       :key="item.value"
+                       :label="item.label"
+                       :value="item.value">
+                    </el-option>
+                </el-select>
+              </el-form-item> -->
+              <el-form-item label="备注">
+                <el-input type="textarea" v-model="ruleForm3.desc"></el-input>
+              </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="onSubmit2">提交</el-button>
+                  <el-button @click="resetForm('ruleForm3')">重置</el-button>
+                </el-form-item>
+            </el-form>       
+        </el-dialog>        
+        <!-- <el-dialog
+          title="编辑事务"
+          :visible.sync="dialogVisible2"
+          center
+          width="30%"
+          >
+            <el-form :model="ruleForm3" status-icon  ref="ruleForm3" label-width="100px" >
+              <el-form-item label="事务名称">
+                <el-input v-model="ruleForm3.name" auto-complete="off"></el-input>
+              </el-form-item>
+              <el-form-item label="待办人">
+                <el-select v-model="ruleForm3.commissionUserId" placeholder="请选择活动区域">
+                    <el-option
+                       v-for="item in jbr"
+                       :key="item.id"
+                       :label="item.staffName"
+                       :value="item.id">
+                    </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="待办时间">
+                <el-col :span="11">
+                  <el-date-picker type="date"  value-format="yyyy-MM-dd" placeholder="选择日期" v-model="ruleForm3.date1" style="width: 100%;"></el-date-picker>
+                </el-col>
+              </el-form-item>
+              <el-form-item label="提醒时间">
+                <el-col :span="11">
+                    <el-time-picker
+                      v-model="ruleForm3.sendTime"
+                      style="width: 100%;"
+                      placeholder="提醒时间">
+                    </el-time-picker>                    
+                </el-col>
+              </el-form-item>              
+  
+            <el-form-item label="是否结束">
+              <el-switch v-model="ruleForm3.stop"></el-switch>
+            </el-form-item>              
+            <el-form-item label="活动性质">
+              <el-select v-model="ruleForm3.type" placeholder="类型">
+                    <el-option
+                       v-for="item in hdxz"
+                       :key="item.value"
+                       :label="item.label"
+                       :value="item.value">
+                    </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="备注">
+                <el-input type="textarea" v-model="ruleForm3.desc"></el-input>
+              </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="onSubmit2">提交</el-button>
+                  <el-button @click="resetForm('ruleForm3')">重置</el-button>
+                </el-form-item>
+            </el-form>       
+        </el-dialog>    -->
+        <el-dialog
+          title="事务日志"
+          :visible.sync="dialogVisible3"
+          center
+          width="60%"
+          >
+            <el-table
+                :data="reportData"  
+                border  
+                tooltip-effect="dark"
+                 highlight-current-row style="width: 100%;font-weight:bold"
+                class="m20"
+              >
+                <el-table-column prop="affairName" label="事务名称" align="center"   ></el-table-column>
+                <el-table-column prop="transatorName" label="办理人姓名" align="center"   ></el-table-column>
+                <el-table-column prop="transatorTime" label="办理时间" align="center"   ></el-table-column>
+                <el-table-column prop="discription" label="办理描述" align="center"   ></el-table-column>
+                <el-table-column prop="money" label="金额" align="center"   ></el-table-column>
+                <el-table-column prop="creatTime" label="更新时间" align="center"   ></el-table-column>
+            </el-table>      
+        </el-dialog>  
+        <el-dialog
+          title="事务完成信息"
+          :visible.sync="dialogVisible4"
+          center
+          width="30%"
+          >
+        
+            <el-form   :rules="rules" :model="ruleForm4" status-icon  ref="ruleForm4" label-width="100px" >
+              <el-form-item label="事务名称">
+                <el-input v-model="ruleForm4.name" auto-complete="off" disabled></el-input>
+              </el-form-item>
+              <el-form-item label="待办人">
+                <el-select v-model="ruleForm4.username" placeholder="请选择活动区域" disabled>
+                    <el-option
+                       v-for="item in jbr"
+                       :key="item.id"
+                       :label="item.staffName"
+                       :value="item.id">
+                    </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="办理时间">
+                <el-col :span="11">
+    <el-date-picker
+      v-model="ruleForm4.date1"
+      value-format="yyyy-MM-dd HH:mm:ss"
+      type="datetime"
+      placeholder="选择日期时间">
+    </el-date-picker>                  
+                  
+                </el-col>
+              </el-form-item>
+              <el-form-item label="所花金额" prop="money">
+                <el-input v-model="ruleForm4.money" auto-complete="off"></el-input>
+              </el-form-item>              
+              <el-form-item label="备注" prop="desc">
+                <el-input type="textarea" v-model="ruleForm4.desc"></el-input>
+              </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="onSubmit3">提交</el-button>
+                  <el-button @click="resetForm('ruleForm4')">重置</el-button>
+                </el-form-item>
+            </el-form>       
+        </el-dialog>                                                   
+    </div>
+</template>
+
+<script>
+import { mapState, mapMutations } from "vuex";
+import axios from "axios";
+import {
+  httpSelectAffairTable,
+  httpUserNamelist,
+  httpSelectAffairLogging,
+  httpInsertAffairLogging,
+  httpInsertAffair,
+  httpUpdateAffair
+} from "../../../service/http";
+import { timeFormat, sFormat } from "../../../config/time";
+export default {
+  data() {
+    var validateUsername = (rule, value, callback) => {
+      if (value != null && value != "") {
+        var reg = /^[a-zA-Z0-9_-]{4,16}$/;
+        if (!reg.test(value)) {
+          return callback(
+            new Error("请输入4-16位包含大小写字母和数字的用户名！")
+          );
+        } else {
+          callback();
+        }
+      } else {
+        return callback(
+          new Error("请输入4-16位包含大小写字母和数字的用户名！")
+        );
+      }
+    };
+
+    var validatePassword = (rule, value, callback) => {
+      if (value != null && value != "") {
+        var reg = /^[A-Za-z]+[0-9]+[A-Za-z0-9]*|[0-9]+[A-Za-z]+[A-Za-z0-9]*$/g;
+        if (!reg.test(value)) {
+          return callback(
+            new Error("密码必须由6-16个英文字母和数字的字符串组成！")
+          );
+        } else {
+          callback();
+        }
+      } else {
+        return callback(
+          new Error("密码必须由6-16个英文字母和数字的字符串组成！")
+        );
+      }
+    };
+    var validateMoney = (rule, value, callback) => {
+      if (value != null && value != "") {
+        var reg = /^([1-9][0-9]*)+(.[0-9]{1,2})?$/;
+        if (!reg.test(value)) {
+          return callback(new Error("非零开头的最多带两位小数的数字！"));
+        } else {
+          callback();
+        }
+      } else {
+        return callback(new Error("非零开头的最多带两位小数的数字！"));
+      }
+    };
+    var validateEmail = (rule, value, callback) => {
+      if (value != null && value != "") {
+        var reg = /^([a-zA-Z0-9_-])+@([a-zA-Z0-9_-])+(.[a-zA-Z0-9_-])+/;
+        if (!reg.test(value)) {
+          return callback(new Error("请输入正确邮箱！"));
+        } else {
+          callback();
+        }
+      } else {
+        return callback(new Error("请输入正确邮箱！"));
+      }
+    };
+
+    var validateMobile = (rule, value, callback) => {
+      var reg = /^(13[0-9]|14[5|7]|15[0|1|2|3|5|6|7|8|9]|18[0|1|2|3|5|6|7|8|9]|19[0|1|2|3|5|6|7|8|9])\d{8}$/;
+      if (value == "") {
+        callback(new Error("请输入正确手机号码！"));
+      } else if (!reg.test(value)) {
+        callback(new Error("请输入正确手机号码！"));
+      } else {
+        callback();
+      }
+    };
+    return {
+      loading: false,
+      id: "",
+      title: "事务管理",
+      search: {},
+      tableData: [],
+      commissionName: [], //
+      creatName: [],
+      dialogVisible1: false,
+      dialogVisible2: false,
+      dialogVisible3: false,
+      dialogVisible4: false,
+      fileList: [],
+      npage: 1,
+      pageSize: 20,
+      total: 0,
+      multipleSelection: [], //全选框
+      ruleForm2: {
+        name: "",
+        username: "",
+        date1: "",
+        date2: "",
+        phone: "",
+        type: "",
+        desc: "",
+        stop: false,
+        huodong: false,
+        now: false
+      },
+      jbr: [],
+      hdxz: [
+        { label: "周", value: "1" },
+        { label: "月", value: "2" },
+        { label: "非周期", value: "3" }
+      ],
+      ruleForm3: {
+        name: "",
+        username: "",
+        date1: "",
+        money: "",
+        desc: ""
+      },
+      reportData: [],
+      reporNpage: 0,
+      reporPageSize: 5,
+      reportTotal: 0,
+      ruleForm4: {},
+      rules: {
+        staffName: [
+          { required: true, message: "请输入真实姓名", trigger: "blur" }
+        ],
+        name: [{ required: true, message: "请输入事务名称", trigger: "blur" }],
+        reciverName: [
+          { required: true, message: "请输入真实姓名", trigger: "blur" }
+        ],
+        senderName: [{ message: "请输入真实姓名", trigger: "blur" }],
+        username: [
+          { required: true, message: "请选择一个代办人", trigger: "change" }
+        ],
+        password: [
+          { require: true, validator: validatePassword, trigger: "blur" }
+        ],
+        mobilePhone: [
+          { require: true, validator: validateMobile, trigger: "blur" }
+        ],
+        email: [{ require: true, validator: validateEmail, trigger: "blur" }],
+        mobile: [{ require: true, validator: validateMobile, trigger: "blur" }],
+        money: [{ require: true, validator: validateMoney, trigger: "blur" }],
+        roles: [
+          {
+            type: "array",
+            required: true,
+            message: "请至少选择一个角色",
+            trigger: "change"
+          }
+        ],
+        signature: [
+          {
+            required: true,
+            message: "请选择发送签名",
+            trigger: "change"
+          }
+        ],
+        ssex: [{ required: true, message: "请选择性别", trigger: "change" }],
+        deptId: [{ required: true, message: "请选择部门", trigger: "change" }],
+        sendStatus: [
+          { required: true, message: "请选择状态", trigger: "change" }
+        ],
+        sendPlatform: [
+          { required: true, message: "请选择发送平台", trigger: "change" }
+        ],
+        messageType: [
+          { required: true, message: "请选择发送平台", trigger: "change" }
+        ]
+      }
+    };
+  },
+  watch: {
+    userInfo(val, oldVal) {
+ 
+    }
+  },
+  computed: {
+    ...mapState(["userInfo"]),
+    getUserIcons() {
+      return this.$store.state.userInfo;
+    }
+  },
+  methods: {
+    hasUser() {
+      if (
+        this.userInfo == "" &&
+        this.userInfo == null &&
+        this.userInfo == "undefined"
+      ) {
+        this.$message.error("当前登陆用户已失效，请重新登陆");
+    //    this.$router.push("/login");
+        return;
+      }
+    },
+    //事务完成
+    _httpInsertAffairLogging(
+      affairId,
+      transatorId,
+      affairName,
+      transatorName,
+      money,
+      discription
+    ) {
+      this.hasUser();
+      httpInsertAffairLogging(
+        affairId,
+        transatorId,
+        affairName,
+        transatorName,
+        money,
+        discription
+      )
+        .then(res => {
+          let data = res.data;
+          if (data.code == 200) {
+            this.$message({
+              message: data.msg,
+              type: "success"
+            });
+
+            this.resetForm("ruleForm4");
+            this.dialogVisible4 = false;
+            this.init(this.npage, this.pagesize);
+          } else if (data.code == 500) {
+            this.$message.error(data.msg);
+            this.$router.push("/login");
+          } else {
+            this.$message.error(data.msg);
+          }
+        })
+      //   .catch(err => {
+      //     let data = err.response ? err.response.data : {};
+
+      //     if (data.message == "当前登陆用户已失效，请重新登陆") {
+      //       this.$message.error(data.message);
+      // //      this.$router.push("/login");
+      //     } else {
+      //       this.$message.error("网络错误请联系管理员");
+      //     }
+      //   });
+    },
+    //新增修改用户
+    _httpInsertAffair(
+      name,
+      commissionUser,
+      commissionUserId,
+      commissionTime,
+      sendTime,
+      type,
+      stop,
+      commissionAddres,
+      mobile,
+      endDate,
+      startDate
+    ) {
+      this.hasUser();
+      httpInsertAffair(
+        name,
+        commissionUser,
+        commissionUserId,
+        commissionTime,
+        sendTime,
+        type,
+        stop,
+        commissionAddres,
+        mobile,
+        endDate,
+        startDate
+      )
+        .then(res => {
+          let data = res.data;
+          if (data.code == 200) {
+            this.$message({
+              message: data.msg,
+              type: "success"
+            });
+            this.resetForm("ruleForm2");
+            this.dialogVisible2 = false;
+            this.dialogVisible1 = false;
+            this.init(this.npage, this.pagesize);
+          } else if (data.code == 500) {
+            this.$message.error(data.msg);
+            this.$router.push("/login");
+          } else {
+            this.$message.error(data.msg);
+          }
+        })
+        // .catch(err => {
+        //   let data = err.response ? err.response.data : {};
+
+        //   if (data.message == "当前登陆用户已失效，请重新登陆") {
+        //     this.$message.error(data.message);
+        // //    this.$router.push("/login");
+        //   } else {
+        //     this.$message.error("网络错误请联系管理员");
+        //   }
+        // });
+    },
+    //新增修改用户
+    _httpUpdateAffair(
+      id,
+      name,
+      commissionUser,
+      commissionUserId,
+      commissionTime,
+      sendTime,
+      type,
+      stop,
+      commissionAddres,
+      mobile,
+      endDate,
+      startDate
+    ) {
+      this.hasUser();
+      httpUpdateAffair(
+        id,
+        name,
+        commissionUser,
+        commissionUserId,
+        commissionTime,
+        sendTime,
+        type,
+        stop,
+        commissionAddres,
+        mobile,
+        endDate,
+        startDate
+      )
+        .then(res => {
+          let data = res.data;
+          if (data.code == 200) {
+            this.$message({
+              message: data.msg,
+              type: "success"
+            });
+            console.log(data);
+            this.resetForm("ruleForm3");
+            this.dialogVisible2 = false;
+            this.dialogVisible1 = false;
+            this.init(this.npage, this.pagesize);
+          } else if (data.code == 500) {
+            this.$message.error(data.msg);
+            this.$router.push("/login");
+          } else {
+            this.$message.error(data.msg);
+          }
+        })
+        // .catch(err => {
+        //   let data = err.response ? err.response.data : {};
+
+        //   if (data.message == "当前登陆用户已失效，请重新登陆") {
+        //     this.$message.error(data.message);
+        // //    this.$router.push("/login");
+        //   } else {
+        //     this.$message.error("网络错误请联系管理员");
+        //   }
+        // });
+    },
+    init(pageNum, pageSize, name, type, createTime, commissionTime) {
+      let _this = this;
+      this.loading = true;
+      this.hasUser();
+      httpSelectAffairTable(
+        pageNum,
+        pageSize,
+        name,
+        type,
+        createTime,
+        commissionTime
+      )
+        .then(res => {
+          let data = res.data;
+
+          if (data.code == 200) {
+            _this.tableData = data.data.rows;
+            for (let a = 0; a < _this.tableData.length; a++) {
+              _this.tableData[a].commissionName = data.data.commissionName[a];
+              _this.tableData[a].creatName = data.data.creatName[a];
+            }
+            console.log(_this.tableData);
+            _this.total = data.data.total;
+            _this.loading = false;
+          } else if (data.code == 500) {
+            this.$message.error(data.msg);
+            this.$router.push("/login");
+          } else {
+            _this.loading = false;
+            this.$message.error(data.msg);
+          }
+        })
+        // .catch(err => {
+        //   let data = err.response ? err.response.data : {};
+
+        //   if (data.message == "当前登陆用户已失效，请重新登陆") {
+        //     this.$message.error(data.message);
+        //  //   this.$router.push("/login");
+        //   } else {
+        //     this.$message.error("网络错误请联系管理员");
+        //   }
+        // });
+    },
+    //得到代办人
+    _httpUserNamelist() {
+      let _this = this;
+      this.hasUser();
+      httpUserNamelist()
+        .then(res => {
+          let data = res.data;
+          _this.tableData = data.rows;
+          _this.jbr = data;
+        })
+      //   .catch(err => {
+      //     let data = err.response ? err.response.data : {};
+
+      //     if (data.message == "当前登陆用户已失效，请重新登陆") {
+      //       this.$message.error(data.message);
+      // //      this.$router.push("/login");
+      //     } else {
+      //       this.$message.error("网络错误请联系管理员");
+      //     }
+      //   });
+    },
+    submitUpload() {
+      this.$refs.upload.submit();
+    },
+    handleRemove(file, fileList) {
+      console.log(file, fileList);
+    },
+    handlePreview(file) {
+      console.log(file);
+    },
+    reset() {
+      this.search = {};
+      this.npage = 1;
+      this.pagesize = 10;
+      this.handleSearch();
+    },
+    handleSearch() {
+      this.init(
+        this.npage,
+        this.pageSize,
+        this.search.input,
+        this.search.order,
+        this.search.time1
+      );
+    },
+    onSubmit3() {
+      this.hasUser();
+      let _this = this;
+      this.$refs["ruleForm4"].validate(valid => {
+        if (valid) {
+          _this._httpInsertAffairLogging(
+            this.ruleForm4.id,
+            this.ruleForm4.username,
+            this.ruleForm4.name,
+            this.ruleForm4.date1,
+            this.ruleForm4.money,
+            this.ruleForm4.desc
+          );
+        } else {
+          return false;
+        }
+      });
+    },
+    onSubmit1() {
+      this.hasUser();
+      let _this = this;
+      let jbrId;
+      console.log(this.jbr);
+      for (let a = 0; a < this.jbr.length; a++) {
+        if (_this.ruleForm2.username == this.jbr[a].id) {
+          jbrId = this.jbr[a].staffName;
+        }
+      }
+      this.$refs["ruleForm2"].validate(valid => {
+        if (valid) {
+          _this._httpInsertAffair(
+            _this.ruleForm2.name,
+            jbrId,
+            _this.ruleForm2.username,
+            _this.ruleForm2.huodong
+              ? _this.ruleForm2.now
+                ? _this.ruleForm2.sendDate + "号"
+                : _this.ruleForm2.sendDate
+              : this.ruleForm2.data,
+            sFormat(_this.ruleForm2.date2),
+            _this.ruleForm2.huodong ? (_this.ruleForm2.now ? 2 : 1) : 3,
+            0,
+            _this.ruleForm2.desc,
+            _this.ruleForm2.mobile,
+            _this.ruleForm2.time ? _this.ruleForm2.time[1] : "",
+            _this.ruleForm2.time ? _this.ruleForm2.time[0] : ""
+          );
+        } else {
+          return false;
+        }
+      });
+    },
+    onSubmit2() {
+      this.hasUser();
+      let _this = this;
+      let jbrId;
+      console.log(this.jbr);
+      for (let a = 0; a < this.jbr.length; a++) {
+        if (_this.ruleForm3.username == this.jbr[a].id) {
+          jbrId = this.jbr[a].staffName;
+        }
+      }
+      console.log(jbrId);
+      this.$refs["ruleForm3"].validate(valid => {
+        if (valid) {
+          _this._httpUpdateAffair(
+            _this.ruleForm3.id,
+            _this.ruleForm3.name,
+            jbrId,
+            _this.ruleForm3.username,
+            _this.ruleForm3.huodong
+              ? _this.ruleForm3.now
+                ? _this.ruleForm3.sendDate + "号"
+                : _this.ruleForm3.sendDate
+              : this.ruleForm3.data,
+            sFormat(_this.ruleForm3.date2),
+            _this.ruleForm3.huodong ? (_this.ruleForm3.now ? 2 : 1) : 3,
+            _this.ruleForm3.stop ? "true" : "false",
+            _this.ruleForm3.desc,
+            _this.ruleForm3.mobile,
+            _this.ruleForm3.time ? _this.ruleForm3.time[1] : "",
+            _this.ruleForm3.time ? _this.ruleForm3.time[0] : ""
+          );
+        } else {
+          return false;
+        }
+      });
+    },
+    // resetForm(formName) {
+    //   console.log(this.$refs[formName]);
+    //   formName = {};
+    // },
+    handleCurrentChange(val) {
+      this.npage = val;
+      this.handleSearch();
+    },
+    handleSizeChange(val) {
+      this.pageSize = val;
+      this.handleSearch();
+    },
+    handleSelectionChange(val) {
+      this.multipleSelection = val;
+    },
+    handleEdit(index, row) {
+      this.hasUser();
+      console.log(JSON.stringify(row));
+
+      // this.ruleForm3 = JSON.parse(JSON.stringify(row));
+      this.ruleForm3 = {
+        id: row.id,
+        name: row.name,
+        username: row.commissionUserId,
+        date1: "",
+        date2: "",
+        mobile: row.mobile,
+        type: "",
+        desc: "",
+        stop: row.stop == "true" ? true : false,
+        huodong: row.type == 3 ? false : true,
+        now: row.type == 1 ? false : true,
+        sendDate:
+          row.type == 1 ? row.commissionTime : parseInt(row.commissionTime),
+        data: row.commissionTime,
+        date2: new Date(
+          2018,
+          7,
+          17,
+          row.sendTime.split(":")[0],
+          row.sendTime.split(":")[1],
+          row.sendTime.split(":")[2]
+        ),
+        desc: row.commissionAddres,
+        time: [row.startDate, row.endDate]
+      };
+      this.id = row.id;
+      this.dialogVisible2 = true;
+    },
+    //得到日志
+    _httpSelectAffairLogging(affairId, pageNum, pageSize) {
+      let _this = this;
+      httpSelectAffairLogging(affairId, pageNum, pageSize)
+        .then(res => {
+          let data = res.data;
+          if (data.code == 200) {
+            //  _this.tableData = data.data.rows;
+            _this.reportData = data.data.rows;
+            _this.reportTotal = data.total;
+          } else if (data.code == 500) {
+            this.$message.error(data.msg);
+            this.$router.push("/login");
+          } else {
+            this.$message.error(data.msg);
+          }
+        })
+      //   .catch(err => {
+      //     let data = err.response ? err.response.data : {};
+
+      //     if (data.message == "当前登陆用户已失效，请重新登陆") {
+      //       this.$message.error(data.message);
+      //  //     this.$router.push("/login");
+      //     } else {
+      //       this.$message.error("网络错误请联系管理员");
+      //     }
+      //   });
+    },
+    //展示日志
+    handleShow(index, row) {
+      this.hasUser();
+      let affairId = row.id;
+      this._httpSelectAffairLogging(
+        row.id,
+        this.reporNpage,
+        this.reporPageSize
+      );
+      this.dialogVisible3 = true;
+    },
+    //完成事务
+    handleTrue(index, row) {
+      this.hasUser();
+      console.log(JSON.stringify(row));
+      this.dialogVisible4 = true;
+      this.ruleForm4 = {
+        id: row.id,
+        name: row.name,
+        username: row.commissionUserId
+      };
+    },
+    filterStop(value, row, column) {
+      return row.stop == value;
+    },
+    // //提交完成
+    // _httpInsertAffairLogging(
+    //   affairId,
+    //   transatorId,
+    //   affairName,
+    //   transatorName,
+    //   money,
+    //   discription
+    // ) {
+    //   httpInsertAffairLogging(
+    //     affairId,
+    //     transatorId,
+    //     affairName,
+    //     transatorName,
+    //     money,
+    //     discription
+    //   )
+    //     .then(res => {
+    //       let data = res.data;
+    //       if (data) {
+    //         this.$message({
+    //           message: "完成提交成功",
+    //           type: "success"
+    //         });
+    //       }
+    //     })
+    //     .catch();
+    // },
+    filterStatus(value, row, column) {
+      return row.Status == value;
+    },
+    //重置
+    resetForm(formName) {
+      this.$refs[formName].resetFields();
+      this.ruleForm2 = {
+        name: "",
+        username: "",
+        date1: "",
+        date2: "",
+        phone: "",
+        type: "",
+        desc: "",
+        stop: false,
+        huodong: false,
+        now: false
+      };
+    }
+  },
+  mounted() {
+    this.init(this.npage, this.pageSize);
+    this._httpUserNamelist();
+  }
+};
+</script>
+
+<style>
+#text .cell {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+#rq span {
+  width: 45px;
+}
+</style>

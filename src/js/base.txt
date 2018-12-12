@@ -1,0 +1,6 @@
+1.权限
+1. 事务管理 短信管理 系统管理
+2.跳转个人主页 admin
+3.周期短信 message、 定时短信 acyclicMessage 营销短信 marketing
+4.事务管理 affair
+5.日志列表 logging  密码修改 passwordManagement 权限管理 role 用户管理 user 

@@ -1,0 +1,5 @@
+export const USER_LOGINID = 'USER_LOGINID'
+export const GET_ROUTER = 'GET_ROUTER'
+export const SET_ROLE = 'SET_ROLE'
+export const IS_LOGIN = 'IS_LOGIN'
+export const MSG_DETAIL = 'MSG_DETAIL'
